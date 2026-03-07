@@ -1,6 +1,6 @@
 # Terragrunt Navigator
 
-VS Code extension that makes `source` paths in Terragrunt HCL files navigable via **Ctrl+Click** and **F12 (Go to Definition)**.
+VS Code extension that makes `source` paths in Terragrunt HCL files Ctrl+Click navigable.
 
 ## Features
 
@@ -19,7 +19,7 @@ terraform {
 }
 ```
 
-**Ctrl+Click** or **F12** on the source path navigates to `modules/aws-powerbi-gateway/main.tf` in your repo.
+**Ctrl+Click** on the source path navigates to `modules/aws-powerbi-gateway/main.tf` in your repo.
 
 ## Supported source patterns
 
@@ -38,5 +38,3 @@ npm install
 npm run compile
 npm run test:unit
 ```
-
-Press **F5** in VS Code to launch the Extension Development Host.

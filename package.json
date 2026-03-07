@@ -1,8 +1,8 @@
 {
   "name": "vscode-terragrunt-navigator",
   "displayName": "Terragrunt Navigator",
-  "description": "Ctrl+Click and F12 navigation for Terragrunt source paths",
-  "version": "0.0.2",
+  "description": "Ctrl+Click navigation for Terragrunt source paths",
+  "version": "0.0.3",
   "publisher": "caseycs",
   "license": "MIT",
   "repository": {
