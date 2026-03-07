@@ -9,6 +9,7 @@ VS Code extension that makes `source` and `config_path` paths in Terragrunt HCL 
 - Navigates `config_path` in `dependency` blocks to the target `terragrunt.hcl`
 - Navigates `find_in_parent_folders("filename")` to the resolved parent file
 - Resolves dynamic interpolations (e.g. `${local.*}`) via `terragrunt render --json` on click
+- Caches render results with hash-based invalidation — repeated clicks are near-instant
 - Skips remote sources (`git::`, `s3::`, `https://`, etc.)
 - Ignores commented-out lines
 
