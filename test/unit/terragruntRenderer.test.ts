@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import { execSync } from 'child_process';
-import { parseRenderedConfig } from '../../src/resolvers/terragruntRenderer';
+import { parseRenderedConfig, renderConfig } from '../../src/resolvers/terragruntRenderer';
 
 const fixturesDir = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures');
 
@@ -99,6 +99,27 @@ describe('terragruntRenderer', () => {
 
       assert.strictEqual(result.source, undefined);
       assert.strictEqual(result.dependencies.size, 0);
+    });
+  });
+
+  describe('renderConfig', () => {
+    it('should cancel previous render when called again for the same directory', async function () {
+      this.timeout(30_000);
+
+      const m2Dir = path.join(fixturesDir, 'with-deps', 'tg', 'm2');
+
+      // Fire two renders for the same dir — first should be killed
+      const first = renderConfig(m2Dir);
+      const second = renderConfig(m2Dir);
+
+      const results = await Promise.allSettled([first, second]);
+
+      assert.strictEqual(results[0].status, 'rejected', 'first render should be killed');
+      assert.strictEqual(results[1].status, 'fulfilled', 'second render should succeed');
+
+      if (results[1].status === 'fulfilled') {
+        assert.strictEqual(results[1].value.dependencies.size, 1);
+      }
     });
   });
 });
