@@ -4,6 +4,11 @@
   "description": "Ctrl+Click and F12 navigation for Terragrunt source paths",
   "version": "0.0.1",
   "publisher": "caseycs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/caseycs/vscode-terragrunt-navigator"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
