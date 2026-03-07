@@ -3,6 +3,7 @@ import * as path from 'path';
 import { resolveSourcePath, getRepoRoot, findGitRoot } from '../../src/resolvers/pathResolver';
 
 const fixturesDir = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures');
+const repoRoot = path.resolve(__dirname, '..', '..', '..');
 
 describe('pathResolver', () => {
   describe('resolveSourcePath with ${get_repo_root()}', () => {
@@ -45,14 +46,14 @@ describe('pathResolver', () => {
     it('should resolve get_repo_root using findGitRoot when repoRoot not provided', () => {
       const documentDir = path.join(fixturesDir, 'simple');
       const result = resolveSourcePath(
-        '${get_repo_root()}/modules/vpc///.',
+        '${get_repo_root()}/test/fixtures/simple/modules/vpc///.',
         documentDir
       );
 
       assert.strictEqual(result.isRemote, false);
       assert.strictEqual(
         result.absolutePath,
-        path.resolve(fixturesDir, 'simple', 'modules', 'vpc')
+        path.resolve(repoRoot, 'test', 'fixtures', 'simple', 'modules', 'vpc')
       );
     });
 
@@ -126,7 +127,7 @@ describe('pathResolver', () => {
       assert.strictEqual(result.isRemote, false);
       assert.strictEqual(
         result.absolutePath,
-        path.resolve(fixturesDir, 'nested', 'modules', 'rds')
+        path.resolve(repoRoot, 'modules', 'rds')
       );
     });
   });
@@ -197,12 +198,12 @@ describe('pathResolver', () => {
   describe('findGitRoot', () => {
     it('should find .git dir in simple fixture', () => {
       const result = findGitRoot(path.join(fixturesDir, 'simple'));
-      assert.strictEqual(result, path.join(fixturesDir, 'simple'));
+      assert.strictEqual(result, repoRoot);
     });
 
     it('should find .git dir from nested subdirectory', () => {
       const result = findGitRoot(path.join(fixturesDir, 'nested', 'env'));
-      assert.strictEqual(result, path.join(fixturesDir, 'nested'));
+      assert.strictEqual(result, repoRoot);
     });
 
     it('should return undefined when no .git found', () => {
@@ -215,7 +216,7 @@ describe('pathResolver', () => {
     it('should find git root for get_repo_root sources', () => {
       const documentDir = path.join(fixturesDir, 'simple');
       const result = getRepoRoot(documentDir, '${get_repo_root()}/modules/vpc///.');
-      assert.strictEqual(result, path.join(fixturesDir, 'simple'));
+      assert.strictEqual(result, repoRoot);
     });
 
     it('should return the resolved prefix for relative double-slash paths', () => {
