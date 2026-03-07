@@ -38,7 +38,8 @@
     "watch": "node esbuild.js --watch",
     "pretest": "npm run compile && tsc -p tsconfig.test.json",
     "test": "node ./out/test/runTests.js",
-    "test:unit": "mocha ./out/test/unit/**/*.test.js",
+    "pretest:unit": "tsc -p tsconfig.test.json",
+    "test:unit": "mocha './out/test/unit/**/*.test.js'",
     "package": "vsce package"
   },
   "devDependencies": {
