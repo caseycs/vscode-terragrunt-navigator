@@ -1,0 +1,6 @@
+node_modules/
+dist/
+out/
+*.vsix
+terragrunt-plan.txt
+.DS_Store
