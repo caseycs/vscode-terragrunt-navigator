@@ -1,4 +1,4 @@
-export type ReferenceKind = 'source' | 'config_path';
+export type ReferenceKind = 'source' | 'config_path' | 'find_in_parent';
 
 export interface SourceReference {
   readonly kind: ReferenceKind;

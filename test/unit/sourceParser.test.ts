@@ -123,5 +123,31 @@ dependency "app" {
       assert.strictEqual(sourceRef!.value, '${get_repo_root()}/modules/app///.');
       assert.strictEqual(configRef!.value, '${get_repo_root()}/tg/m1');
     });
+
+    it('should parse find_in_parent_folders reference', () => {
+      const text = `locals {
+  path = read_terragrunt_config(find_in_parent_folders("path_vars.hcl")).locals
+}`;
+      const refs = parseSourceReferences(text);
+      const parentRef = refs.find(r => r.kind === 'find_in_parent');
+
+      assert.ok(parentRef, 'should have a find_in_parent reference');
+      assert.strictEqual(parentRef!.value, 'path_vars.hcl');
+    });
+
+    it('should parse find_in_parent_folders alongside other references', () => {
+      const text = `locals {
+  path = read_terragrunt_config(find_in_parent_folders("path_vars.hcl")).locals
+}
+
+terraform {
+  source = "\${get_repo_root()}/modules/app///."
+}`;
+      const refs = parseSourceReferences(text);
+
+      assert.strictEqual(refs.length, 2);
+      assert.ok(refs.find(r => r.kind === 'source'));
+      assert.ok(refs.find(r => r.kind === 'find_in_parent'));
+    });
   });
 });

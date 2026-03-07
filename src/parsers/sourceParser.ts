@@ -1,5 +1,5 @@
 import { ReferenceKind, SourceReference } from '../types';
-import { SOURCE_PATTERN, CONFIG_PATH_PATTERN } from '../constants';
+import { SOURCE_PATTERN, CONFIG_PATH_PATTERN, FIND_IN_PARENT_PATTERN } from '../constants';
 
 const BLOCK_NAME_PATTERN = /(?:dependency|dependencies)\s+"([^"]+)"\s*\{/g;
 
@@ -51,5 +51,6 @@ function extractRefs(
 export function parseSourceReferences(text: string): readonly SourceReference[] {
   const sourceRefs = extractRefs(text, SOURCE_PATTERN, 'source');
   const configPathRefs = extractRefs(text, CONFIG_PATH_PATTERN, 'config_path');
-  return [...sourceRefs, ...configPathRefs];
+  const findInParentRefs = extractRefs(text, FIND_IN_PARENT_PATTERN, 'find_in_parent');
+  return [...sourceRefs, ...configPathRefs, ...findInParentRefs];
 }

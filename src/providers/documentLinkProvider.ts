@@ -3,7 +3,7 @@ import * as path from 'path';
 import { parseSourceReferences } from '../parsers/sourceParser';
 import { resolveSourcePath } from '../resolvers/pathResolver';
 import { resolveReference } from '../resolvers/referenceResolver';
-import { SourceReference } from '../types';
+import { ReferenceKind, SourceReference } from '../types';
 
 interface PendingLink {
   readonly link: vscode.DocumentLink;
@@ -26,18 +26,18 @@ export class TerragruntDocumentLinkProvider implements vscode.DocumentLinkProvid
     this.pendingLinks.clear();
 
     for (const ref of sourceRefs) {
-      const resolved = resolveSourcePath(ref.value, documentDir);
-      if (resolved.isRemote) {
-        continue;
+      if (ref.kind !== 'find_in_parent') {
+        const resolved = resolveSourcePath(ref.value, documentDir);
+        if (resolved.isRemote) {
+          continue;
+        }
       }
 
       const startPos = document.positionAt(ref.startOffset);
       const endPos = document.positionAt(ref.endOffset);
       const range = new vscode.Range(startPos, endPos);
       const link = new vscode.DocumentLink(range);
-      link.tooltip = ref.kind === 'config_path'
-        ? 'Follow Terragrunt dependency'
-        : 'Follow Terragrunt source';
+      link.tooltip = tooltipForKind(ref.kind);
 
       const key = `${ref.startOffset}:${ref.endOffset}`;
       this.pendingLinks.set(key, { link, sourceRef: ref, documentDir });
@@ -64,5 +64,13 @@ export class TerragruntDocumentLinkProvider implements vscode.DocumentLinkProvid
       return undefined;
     }
     return undefined;
+  }
+}
+
+function tooltipForKind(kind: ReferenceKind): string {
+  switch (kind) {
+    case 'config_path': return 'Follow Terragrunt dependency';
+    case 'find_in_parent': return 'Open parent config';
+    case 'source': return 'Follow Terragrunt source';
   }
 }

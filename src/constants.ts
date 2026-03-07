@@ -4,6 +4,8 @@ export const SOURCE_PATTERN = /source\s*=\s*"([^"]+)"/g;
 
 export const CONFIG_PATH_PATTERN = /config_path\s*=\s*"([^"]+)"/g;
 
+export const FIND_IN_PARENT_PATTERN = /find_in_parent_folders\("([^"]+)"\)/g;
+
 export const GET_REPO_ROOT_PATTERN = /^\$\{get_repo_root\(\)\}/;
 
 export const HAS_INTERPOLATION = /\$\{(?!get_repo_root\(\))[^}]+\}/;
