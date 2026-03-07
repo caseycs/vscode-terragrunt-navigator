@@ -7,6 +7,7 @@ VS Code extension that makes `source` and `config_path` paths in Terragrunt HCL 
 - Resolves `${get_repo_root()}` to the actual git repository root
 - Handles Terragrunt's `//` double-slash convention
 - Navigates `config_path` in `dependency` blocks to the target `terragrunt.hcl`
+- Navigates `find_in_parent_folders("filename")` to the resolved parent file
 - Resolves dynamic interpolations (e.g. `${local.*}`) via `terragrunt render --json` on click
 - Skips remote sources (`git::`, `s3::`, `https://`, etc.)
 - Ignores commented-out lines
@@ -47,6 +48,16 @@ dependency "network" {
 
 **Ctrl+Click** runs `terragrunt render --json` to resolve the interpolations, then navigates to the resolved `terragrunt.hcl`.
 
+### Parent config includes
+
+```hcl
+locals {
+  path = read_terragrunt_config(find_in_parent_folders("path_vars.hcl")).locals
+}
+```
+
+**Ctrl+Click** on `path_vars.hcl` navigates to the file found by searching parent directories.
+
 ## Supported patterns
 
 | Pattern | Resolves to |
@@ -55,6 +66,7 @@ dependency "network" {
 | `source = "..//modules/vpc"` | `<relative-path>/modules/vpc/main.tf` |
 | `config_path = "${get_repo_root()}/tg/vpc"` | `<repo-root>/tg/vpc/terragrunt.hcl` |
 | `config_path = ".../${local.var}/vpc"` | Resolved via `terragrunt render --json` |
+| `find_in_parent_folders("path_vars.hcl")` | First `path_vars.hcl` found in parent dirs |
 | `source = "git::https://..."` | Skipped (remote) |
 
 ## Development
