@@ -2,7 +2,7 @@
   "name": "vscode-terragrunt-navigator",
   "displayName": "Terragrunt Navigator",
   "description": "Ctrl+Click into Terragrunt sources, dependencies, and parent configs — with dynamic interpolation support",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "publisher": "caseycs",
   "license": "MIT",
   "repository": {
