@@ -22,7 +22,8 @@ export class TerragruntDefinitionProvider implements vscode.DefinitionProvider {
     }
 
     const documentDir = path.dirname(document.uri.fsPath);
-    const targetFile = await resolveReference(matchingRef, documentDir);
+    const timeout = vscode.workspace.getConfiguration('terragruntNavigator').get<number>('renderTimeout');
+    const targetFile = await resolveReference(matchingRef, documentDir, timeout);
 
     if (!targetFile) {
       return undefined;

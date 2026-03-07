@@ -6,13 +6,13 @@ import { resolveSourcePath } from './pathResolver';
 import { findTargetFile } from './targetFinder';
 import { renderConfig } from './terragruntRenderer';
 
-export async function resolveReference(ref: SourceReference, documentDir: string): Promise<string | undefined> {
+export async function resolveReference(ref: SourceReference, documentDir: string, renderTimeout?: number): Promise<string | undefined> {
   if (ref.kind === 'find_in_parent') {
     return findInParentFolders(ref.value, documentDir);
   }
 
   if (HAS_INTERPOLATION.test(ref.value)) {
-    return resolveViaRender(ref, documentDir);
+    return resolveViaRender(ref, documentDir, renderTimeout);
   }
 
   return resolveStatically(ref, documentDir);
@@ -28,9 +28,9 @@ async function resolveStatically(ref: SourceReference, documentDir: string): Pro
   return findTarget(ref.kind, resolved.absolutePath);
 }
 
-async function resolveViaRender(ref: SourceReference, documentDir: string): Promise<string | undefined> {
+async function resolveViaRender(ref: SourceReference, documentDir: string, timeout?: number): Promise<string | undefined> {
   try {
-    const rendered = await renderConfig(documentDir);
+    const rendered = await renderConfig(documentDir, timeout);
 
     if (ref.kind === 'config_path' && ref.blockName) {
       const configPath = rendered.dependencies.get(ref.blockName);

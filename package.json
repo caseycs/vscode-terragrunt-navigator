@@ -2,7 +2,7 @@
   "name": "vscode-terragrunt-navigator",
   "displayName": "Terragrunt Navigator",
   "description": "Ctrl+Click into Terragrunt sources, dependencies, and parent configs — with dynamic interpolation support",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "publisher": "caseycs",
   "license": "MIT",
   "repository": {
@@ -31,7 +31,18 @@
           "Terragrunt"
         ]
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Terragrunt Navigator",
+      "properties": {
+        "terragruntNavigator.renderTimeout": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 1000,
+          "description": "Timeout in milliseconds for terragrunt render --json"
+        }
+      }
+    }
   },
   "scripts": {
     "compile": "node esbuild.js",

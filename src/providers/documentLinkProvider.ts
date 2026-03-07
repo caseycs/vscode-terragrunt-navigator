@@ -56,7 +56,8 @@ export class TerragruntDocumentLinkProvider implements vscode.DocumentLinkProvid
         continue;
       }
 
-      const targetFile = await resolveReference(pending.sourceRef, pending.documentDir);
+      const timeout = vscode.workspace.getConfiguration('terragruntNavigator').get<number>('renderTimeout');
+      const targetFile = await resolveReference(pending.sourceRef, pending.documentDir, timeout);
       if (targetFile) {
         link.target = vscode.Uri.file(targetFile);
         return link;

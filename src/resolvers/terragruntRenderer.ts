@@ -1,5 +1,7 @@
-import { execFile } from 'child_process';
+import { execFile, ChildProcess } from 'child_process';
 import { RenderedConfig } from '../types';
+
+export const DEFAULT_RENDER_TIMEOUT = 10_000;
 
 export interface ParsedRenderedConfig {
   readonly source: string | undefined;
@@ -23,9 +25,21 @@ export function parseRenderedConfig(json: string): ParsedRenderedConfig {
   return { source, dependencies };
 }
 
-export function renderConfig(cwd: string): Promise<ParsedRenderedConfig> {
+const activeProcesses = new Map<string, ChildProcess>();
+
+export function renderConfig(cwd: string, timeout?: number): Promise<ParsedRenderedConfig> {
+  const existing = activeProcesses.get(cwd);
+  if (existing) {
+    existing.kill();
+    activeProcesses.delete(cwd);
+  }
+
+  const effectiveTimeout = timeout ?? DEFAULT_RENDER_TIMEOUT;
+
   return new Promise((resolve, reject) => {
-    execFile('terragrunt', ['render', '--json'], { cwd, timeout: 30_000 }, (error, stdout) => {
+    const child = execFile('terragrunt', ['render', '--json'], { cwd, timeout: effectiveTimeout }, (error, stdout) => {
+      activeProcesses.delete(cwd);
+
       if (error) {
         reject(new Error(`terragrunt render failed: ${error.message}`));
         return;
@@ -43,5 +57,7 @@ export function renderConfig(cwd: string): Promise<ParsedRenderedConfig> {
         reject(new Error(`Failed to parse terragrunt render output: ${(parseError as Error).message}`));
       }
     });
+
+    activeProcesses.set(cwd, child);
   });
 }
