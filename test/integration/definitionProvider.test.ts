@@ -4,7 +4,18 @@ import * as path from 'path';
 
 const fixturesDir = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures');
 
+async function activateExtension(): Promise<void> {
+  const ext = vscode.extensions.getExtension('caseycs.vscode-terragrunt-navigator');
+  if (ext && !ext.isActive) {
+    await ext.activate();
+  }
+}
+
 describe('DefinitionProvider Integration', () => {
+  before(async () => {
+    await activateExtension();
+  });
+
   it('should provide definition for get_repo_root source path', async () => {
     const filePath = path.join(fixturesDir, 'simple', 'terragrunt.hcl');
     const document = await vscode.workspace.openTextDocument(filePath);
@@ -12,7 +23,7 @@ describe('DefinitionProvider Integration', () => {
 
     // Position cursor inside the source value
     const text = document.getText();
-    const sourceStart = text.indexOf('//modules/vpc');
+    const sourceStart = text.indexOf('/modules/vpc');
     const position = document.positionAt(sourceStart + 5);
 
     const definitions = await vscode.commands.executeCommand<vscode.Location[]>(

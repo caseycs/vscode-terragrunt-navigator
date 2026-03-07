@@ -4,7 +4,18 @@ import * as path from 'path';
 
 const fixturesDir = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures');
 
+async function activateExtension(): Promise<void> {
+  const ext = vscode.extensions.getExtension('caseycs.vscode-terragrunt-navigator');
+  if (ext && !ext.isActive) {
+    await ext.activate();
+  }
+}
+
 describe('DocumentLinkProvider Integration', () => {
+  before(async () => {
+    await activateExtension();
+  });
+
   it('should provide document links for source references', async () => {
     const filePath = path.join(fixturesDir, 'simple', 'terragrunt.hcl');
     const document = await vscode.workspace.openTextDocument(filePath);

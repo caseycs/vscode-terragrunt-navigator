@@ -7,3 +7,5 @@ terragrunt-plan.txt
 .terragrunt-cache/
 .terraform.lock.hcl
 .claude/
+.mcp.json
+.vscode-test/
