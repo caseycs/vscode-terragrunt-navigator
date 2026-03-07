@@ -1,0 +1,3 @@
+locals {
+  tg = "tg"
+}

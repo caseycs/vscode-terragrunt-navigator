@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { parseSourceReferences } from '../parsers/sourceParser';
 import { resolveSourcePath } from '../resolvers/pathResolver';
-import { findTargetFile } from '../resolvers/targetFinder';
+import { resolveReference } from '../resolvers/referenceResolver';
 import { SourceReference } from '../types';
 
 interface PendingLink {
@@ -19,7 +20,7 @@ export class TerragruntDocumentLinkProvider implements vscode.DocumentLinkProvid
   ): vscode.DocumentLink[] {
     const text = document.getText();
     const sourceRefs = parseSourceReferences(text);
-    const documentDir = getDocumentDir(document);
+    const documentDir = path.dirname(document.uri.fsPath);
     const links: vscode.DocumentLink[] = [];
 
     this.pendingLinks.clear();
@@ -34,7 +35,9 @@ export class TerragruntDocumentLinkProvider implements vscode.DocumentLinkProvid
       const endPos = document.positionAt(ref.endOffset);
       const range = new vscode.Range(startPos, endPos);
       const link = new vscode.DocumentLink(range);
-      link.tooltip = 'Follow Terragrunt source';
+      link.tooltip = ref.kind === 'config_path'
+        ? 'Follow Terragrunt dependency'
+        : 'Follow Terragrunt source';
 
       const key = `${ref.startOffset}:${ref.endOffset}`;
       this.pendingLinks.set(key, { link, sourceRef: ref, documentDir });
@@ -49,21 +52,17 @@ export class TerragruntDocumentLinkProvider implements vscode.DocumentLinkProvid
     _token: vscode.CancellationToken
   ): Promise<vscode.DocumentLink | undefined> {
     for (const pending of this.pendingLinks.values()) {
-      if (pending.link === link) {
-        const resolved = resolveSourcePath(pending.sourceRef.value, pending.documentDir);
-        const targetFile = await findTargetFile(resolved.absolutePath);
-        if (targetFile) {
-          link.target = vscode.Uri.file(targetFile);
-          return link;
-        }
-        return undefined;
+      if (pending.link !== link) {
+        continue;
       }
+
+      const targetFile = await resolveReference(pending.sourceRef, pending.documentDir);
+      if (targetFile) {
+        link.target = vscode.Uri.file(targetFile);
+        return link;
+      }
+      return undefined;
     }
     return undefined;
   }
-}
-
-function getDocumentDir(document: vscode.TextDocument): string {
-  const path = require('path');
-  return path.dirname(document.uri.fsPath);
 }

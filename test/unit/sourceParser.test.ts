@@ -86,5 +86,42 @@ terraform {
       assert.strictEqual(refs.length, 1);
       assert.strictEqual(refs[0].value, '..//modules/vpc');
     });
+
+    it('should set kind to source for source references', () => {
+      const text = 'source = "${get_repo_root()}/modules/vpc///."';
+      const refs = parseSourceReferences(text);
+      assert.strictEqual(refs[0].kind, 'source');
+    });
+
+    it('should parse config_path with kind config_path', () => {
+      const text = 'config_path = "${get_repo_root()}/tg/m1"';
+      const refs = parseSourceReferences(text);
+
+      assert.strictEqual(refs.length, 1);
+      assert.strictEqual(refs[0].kind, 'config_path');
+      assert.strictEqual(refs[0].value, '${get_repo_root()}/tg/m1');
+    });
+
+    it('should parse mixed source and config_path in same file', () => {
+      const text = `
+terraform {
+  source = "\${get_repo_root()}/modules/app///."
+}
+
+dependency "app" {
+  config_path = "\${get_repo_root()}/tg/m1"
+}`;
+      const refs = parseSourceReferences(text);
+
+      assert.strictEqual(refs.length, 2);
+
+      const sourceRef = refs.find(r => r.kind === 'source');
+      const configRef = refs.find(r => r.kind === 'config_path');
+
+      assert.ok(sourceRef, 'should have a source reference');
+      assert.ok(configRef, 'should have a config_path reference');
+      assert.strictEqual(sourceRef!.value, '${get_repo_root()}/modules/app///.');
+      assert.strictEqual(configRef!.value, '${get_repo_root()}/tg/m1');
+    });
   });
 });

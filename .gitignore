@@ -4,4 +4,6 @@ out/
 *.vsix
 terragrunt-plan.txt
 .DS_Store
+.terragrunt-cache/
+.terraform.lock.hcl
 .claude/

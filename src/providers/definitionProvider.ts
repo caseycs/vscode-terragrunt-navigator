@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { parseSourceReferences } from '../parsers/sourceParser';
-import { resolveSourcePath } from '../resolvers/pathResolver';
-import { findTargetFile } from '../resolvers/targetFinder';
+import { resolveReference } from '../resolvers/referenceResolver';
 
 export class TerragruntDefinitionProvider implements vscode.DefinitionProvider {
   async provideDefinition(
@@ -23,13 +22,8 @@ export class TerragruntDefinitionProvider implements vscode.DefinitionProvider {
     }
 
     const documentDir = path.dirname(document.uri.fsPath);
-    const resolved = resolveSourcePath(matchingRef.value, documentDir);
+    const targetFile = await resolveReference(matchingRef, documentDir);
 
-    if (resolved.isRemote) {
-      return undefined;
-    }
-
-    const targetFile = await findTargetFile(resolved.absolutePath);
     if (!targetFile) {
       return undefined;
     }
