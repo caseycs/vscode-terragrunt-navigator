@@ -5,9 +5,6 @@ export async function findInParentFolders(filename: string, startDir: string): P
   let current = path.resolve(startDir);
   const root = path.parse(current).root;
 
-  // Start from parent — find_in_parent_folders skips the current directory
-  current = path.dirname(current);
-
   while (current !== root) {
     const candidate = path.join(current, filename);
     try {

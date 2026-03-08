@@ -35,23 +35,19 @@ describe('referenceResolver', () => {
       assert.strictEqual(result, undefined);
     });
 
-    it('should skip the current directory', async () => {
+    it('should check the current directory first', async () => {
       const ref: SourceReference = {
         kind: 'find_in_parent',
         value: 'terragrunt.hcl',
         startOffset: 0,
         endOffset: 14,
       };
-      // m2 has its own terragrunt.hcl, but find_in_parent should skip it
-      // and find m1's terragrunt.hcl (in tg/ parent there is none, so it won't find one)
+      // m2 has its own terragrunt.hcl — should find it in the current directory
       const documentDir = path.join(fixturesDir, 'with-deps', 'tg', 'm2');
 
       const result = await resolveReference(ref, documentDir);
 
-      // Should not return m2's own terragrunt.hcl
-      if (result) {
-        assert.notStrictEqual(result, path.join(documentDir, 'terragrunt.hcl'));
-      }
+      assert.strictEqual(result, path.join(documentDir, 'terragrunt.hcl'));
     });
   });
 });
