@@ -37,7 +37,7 @@ describe('targetFinder', () => {
       const result = await findTargetFile(moduleDir);
 
       assert.ok(result, 'should find a .tf file even without main.tf');
-      assert.ok(result.endsWith('.tf'), 'should return a .tf file');
+      assert.ok(result.endsWith('outputs.tf'), 'should return the alphabetically first .tf file (outputs.tf)');
     });
 
     it('should still return undefined for directory with no .tf files', async () => {

@@ -40,6 +40,33 @@ describe('DefinitionProvider Integration', () => {
     );
   });
 
+  it('should fall back to first .tf file when main.tf is not found', async () => {
+    const filePath = path.join(fixturesDir, 'no-main-tf', 'terragrunt.hcl');
+    const document = await vscode.workspace.openTextDocument(filePath);
+    await vscode.window.showTextDocument(document);
+
+    const text = document.getText();
+    const sourceStart = text.indexOf('/modules/storage');
+    const position = document.positionAt(sourceStart + 5);
+
+    const definitions = await vscode.commands.executeCommand<vscode.Location[]>(
+      'vscode.executeDefinitionProvider',
+      document.uri,
+      position
+    );
+
+    assert.ok(definitions);
+    assert.ok(definitions.length > 0, 'Should have at least one definition');
+    assert.ok(
+      definitions[0].uri.fsPath.endsWith('.tf'),
+      'Should point to a .tf file'
+    );
+    assert.ok(
+      !definitions[0].uri.fsPath.endsWith('main.tf'),
+      'Should not be main.tf (it does not exist)'
+    );
+  });
+
   it('should not provide definition for remote sources', async () => {
     const content = 'source = "git::https://example.com/modules.git//vpc"';
     const document = await vscode.workspace.openTextDocument({
