@@ -31,5 +31,18 @@ describe('targetFinder', () => {
       assert.ok(result);
       assert.ok(result.endsWith('main.tf'));
     });
+
+    it('should fall back to first .tf file when main.tf is not found', async () => {
+      const moduleDir = path.join(fixturesDir, 'no-main-tf', 'modules', 'storage');
+      const result = await findTargetFile(moduleDir);
+
+      assert.ok(result, 'should find a .tf file even without main.tf');
+      assert.ok(result.endsWith('.tf'), 'should return a .tf file');
+    });
+
+    it('should still return undefined for directory with no .tf files', async () => {
+      const result = await findTargetFile(fixturesDir);
+      assert.strictEqual(result, undefined);
+    });
   });
 });
