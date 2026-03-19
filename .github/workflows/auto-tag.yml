@@ -26,8 +26,18 @@ jobs:
           TAG_PREFIX: v
           DRY_RUN: "true"
 
+      - name: Check if tag already exists
+        id: check
+        run: |
+          NEW_TAG="${{ steps.bump.outputs.new_tag }}"
+          if [ -z "$NEW_TAG" ] || git rev-parse "$NEW_TAG" >/dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Update package.json, commit, and tag
-        if: steps.bump.outputs.new_tag != ''
+        if: steps.check.outputs.skip == 'false'
         run: |
           VERSION="${{ steps.bump.outputs.new_tag }}"
           VERSION="${VERSION#v}"
