@@ -11,7 +11,7 @@
     "url": "https://github.com/caseycs/vscode-terragrunt-navigator"
   },
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.110.0"
   },
   "categories": [
     "Programming Languages"
