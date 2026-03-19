@@ -55,13 +55,15 @@ export class TerragruntDocumentLinkProvider implements vscode.DocumentLinkProvid
       links.push(link);
     }
 
-    // Start background resolution for refs requiring terragrunt render
-    const timeout = vscode.workspace
-      .getConfiguration('terragruntNavigator')
-      .get<number>('renderTimeout');
-    const resolver = new BackgroundResolver(sourceRefs, documentDir, timeout);
-    this.backgroundResolver = resolver;
-    resolver.start().catch(() => { /* fire-and-forget background resolution */ });
+    const config = vscode.workspace.getConfiguration('terragruntNavigator');
+    const timeout = config.get<number>('renderTimeout');
+    const backgroundEnabled = config.get<boolean>('backgroundResolution', true);
+
+    if (backgroundEnabled) {
+      const resolver = new BackgroundResolver(sourceRefs, documentDir, timeout);
+      this.backgroundResolver = resolver;
+      resolver.start().catch(() => { /* fire-and-forget background resolution */ });
+    }
 
     return links;
   }

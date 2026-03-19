@@ -41,6 +41,11 @@
           "default": 10000,
           "minimum": 1000,
           "description": "Timeout in milliseconds for terragrunt render --json"
+        },
+        "terragruntNavigator.backgroundResolution": {
+          "type": "boolean",
+          "default": true,
+          "description": "Pre-resolve dynamic interpolations in the background when a file is opened. Disable to only resolve on click."
         }
       }
     }
