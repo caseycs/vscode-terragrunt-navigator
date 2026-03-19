@@ -1,0 +1,40 @@
+name: Auto Tag
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    if: "!startsWith(github.event.head_commit.message, 'chore: bump version')"
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: "0"
+
+      - name: Determine bump type
+        id: bump
+        uses: anothrNick/github-tag-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: patch
+          TAG_PREFIX: v
+          DRY_RUN: "true"
+
+      - name: Update package.json, commit, and tag
+        if: steps.bump.outputs.new_tag != ''
+        run: |
+          VERSION="${{ steps.bump.outputs.new_tag }}"
+          VERSION="${VERSION#v}"
+          npm version "$VERSION" --no-git-tag-version
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to $VERSION"
+          git tag "v$VERSION"
+          git push origin main --tags
