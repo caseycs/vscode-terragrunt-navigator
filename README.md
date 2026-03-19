@@ -1,6 +1,8 @@
 # Terragrunt Navigator
 
-VS Code extension that makes `source` and `config_path` paths in Terragrunt HCL files Ctrl+Click navigable.
+[![CI](https://github.com/caseycs/vscode-terragrunt-navigator/actions/workflows/ci.yml/badge.svg)](https://github.com/caseycs/vscode-terragrunt-navigator/actions/workflows/ci.yml)
+
+[VS Code extension](https://marketplace.visualstudio.com/items?itemName=caseycs.vscode-terragrunt-navigator) that makes `source` and `config_path` paths in Terragrunt HCL files Ctrl+Click navigable.
 
 ## Features
 
