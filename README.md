@@ -70,6 +70,13 @@ locals {
 | `find_in_parent_folders("path_vars.hcl")` | First `path_vars.hcl` found in parent dirs |
 | `source = "git::https://..."` | Skipped (remote) |
 
+## Configuration
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `terragruntNavigator.renderTimeout` | `number` | `10000` | Timeout in milliseconds for `terragrunt render --json`. Minimum: `1000`. |
+| `terragruntNavigator.backgroundResolution` | `boolean` | `true` | Pre-resolve dynamic interpolations in the background when a file is opened. When disabled, interpolations are only resolved on click. |
+
 ## Development
 
 ```bash

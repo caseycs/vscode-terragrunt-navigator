@@ -5,9 +5,11 @@ import { HCL_SELECTOR } from './constants';
 import { clearRenderCache } from './resolvers/renderCache';
 
 export function activate(context: vscode.ExtensionContext): void {
-  const linkProvider = vscode.languages.registerDocumentLinkProvider(
+  const linkProvider = new TerragruntDocumentLinkProvider();
+
+  const linkRegistration = vscode.languages.registerDocumentLinkProvider(
     HCL_SELECTOR,
-    new TerragruntDocumentLinkProvider()
+    linkProvider
   );
 
   const definitionProvider = vscode.languages.registerDefinitionProvider(
@@ -21,7 +23,16 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   });
 
-  context.subscriptions.push(linkProvider, definitionProvider, cacheInvalidator);
+  const editorChangeHandler = vscode.window.onDidChangeActiveTextEditor(() => {
+    linkProvider.cancelBackground();
+  });
+
+  context.subscriptions.push(
+    linkRegistration,
+    definitionProvider,
+    cacheInvalidator,
+    editorChangeHandler
+  );
 }
 
 export function deactivate(): void {
