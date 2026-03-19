@@ -3,6 +3,7 @@ import * as path from 'path';
 import { parseSourceReferences } from '../parsers/sourceParser';
 import { resolveSourcePath } from '../resolvers/pathResolver';
 import { resolveReference } from '../resolvers/referenceResolver';
+import { BackgroundResolver, refKey } from '../resolvers/backgroundResolver';
 import { ReferenceKind, SourceReference } from '../types';
 
 interface PendingLink {
@@ -13,11 +14,21 @@ interface PendingLink {
 
 export class TerragruntDocumentLinkProvider implements vscode.DocumentLinkProvider {
   private pendingLinks: Map<string, PendingLink> = new Map();
+  private backgroundResolver: BackgroundResolver | null = null;
+
+  cancelBackground(): void {
+    if (this.backgroundResolver) {
+      this.backgroundResolver.cancel();
+      this.backgroundResolver = null;
+    }
+  }
 
   provideDocumentLinks(
     document: vscode.TextDocument,
     _token: vscode.CancellationToken
   ): vscode.DocumentLink[] {
+    this.cancelBackground();
+
     const text = document.getText();
     const sourceRefs = parseSourceReferences(text);
     const documentDir = path.dirname(document.uri.fsPath);
@@ -39,10 +50,18 @@ export class TerragruntDocumentLinkProvider implements vscode.DocumentLinkProvid
       const link = new vscode.DocumentLink(range);
       link.tooltip = tooltipForKind(ref.kind);
 
-      const key = `${ref.startOffset}:${ref.endOffset}`;
+      const key = refKey(ref);
       this.pendingLinks.set(key, { link, sourceRef: ref, documentDir });
       links.push(link);
     }
+
+    // Start background resolution for refs requiring terragrunt render
+    const timeout = vscode.workspace
+      .getConfiguration('terragruntNavigator')
+      .get<number>('renderTimeout');
+    const resolver = new BackgroundResolver(sourceRefs, documentDir, timeout);
+    this.backgroundResolver = resolver;
+    resolver.start();
 
     return links;
   }
@@ -56,8 +75,27 @@ export class TerragruntDocumentLinkProvider implements vscode.DocumentLinkProvid
         continue;
       }
 
-      const timeout = vscode.workspace.getConfiguration('terragruntNavigator').get<number>('renderTimeout');
-      const targetFile = await resolveReference(pending.sourceRef, pending.documentDir, timeout);
+      const resolver = this.backgroundResolver;
+
+      // For refs that need render — use the background resolver
+      if (resolver && resolver.isRenderRef(pending.sourceRef)) {
+        const targetFile = await resolver.resolveNow(pending.sourceRef);
+        if (targetFile) {
+          link.target = vscode.Uri.file(targetFile);
+          return link;
+        }
+        return undefined;
+      }
+
+      // For static/find_in_parent refs — resolve on the fly
+      const timeout = vscode.workspace
+        .getConfiguration('terragruntNavigator')
+        .get<number>('renderTimeout');
+      const targetFile = await resolveReference(
+        pending.sourceRef,
+        pending.documentDir,
+        timeout
+      );
       if (targetFile) {
         link.target = vscode.Uri.file(targetFile);
         return link;
