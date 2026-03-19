@@ -18,6 +18,7 @@ export class BackgroundResolver {
   private readonly renderTimeout: number | undefined;
   private readonly resolveFn: ResolveFn;
   private readonly results = new Map<string, string | undefined>();
+  private readonly pendingKeys: Set<string>;
   private currentKey: string | null = null;
   private currentPromise: Promise<string | undefined> | null = null;
   private cancelled = false;
@@ -33,6 +34,7 @@ export class BackgroundResolver {
     this.documentDir = documentDir;
     this.renderTimeout = renderTimeout;
     this.resolveFn = resolveFn;
+    this.pendingKeys = new Set(this.refs.map(refKey));
   }
 
   cancel(): void {
@@ -67,6 +69,7 @@ export class BackgroundResolver {
 
       const key = refKey(ref);
       if (this.results.has(key)) {
+        this.pendingKeys.delete(key);
         continue;
       }
 
@@ -80,6 +83,7 @@ export class BackgroundResolver {
         this.results.set(key, undefined);
       }
 
+      this.pendingKeys.delete(key);
       this.currentKey = null;
       this.currentPromise = null;
     }
@@ -95,7 +99,11 @@ export class BackgroundResolver {
 
     // Currently being resolved — wait for it
     if (this.currentKey === key && this.currentPromise) {
-      return this.currentPromise;
+      try {
+        return await this.currentPromise;
+      } catch {
+        return undefined;
+      }
     }
 
     // Not yet processed — cancel background, resolve immediately

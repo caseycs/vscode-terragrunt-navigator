@@ -61,7 +61,7 @@ export class TerragruntDocumentLinkProvider implements vscode.DocumentLinkProvid
       .get<number>('renderTimeout');
     const resolver = new BackgroundResolver(sourceRefs, documentDir, timeout);
     this.backgroundResolver = resolver;
-    resolver.start();
+    resolver.start().catch(() => { /* fire-and-forget background resolution */ });
 
     return links;
   }

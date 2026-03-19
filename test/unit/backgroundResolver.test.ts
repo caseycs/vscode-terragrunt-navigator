@@ -16,14 +16,6 @@ function makeRenderRef(startOffset: number, endOffset: number, blockName?: strin
   return makeRef('config_path', '${some_func()}/path', startOffset, endOffset, blockName);
 }
 
-function immediateResolveFn(result: string): ResolveFn {
-  return async () => result;
-}
-
-function delayedResolveFn(result: string, ms: number): ResolveFn {
-  return () => new Promise((resolve) => setTimeout(() => resolve(result), ms));
-}
-
 function trackingResolveFn(results: Map<string, string>): { fn: ResolveFn; calls: SourceReference[] } {
   const calls: SourceReference[] = [];
   const fn: ResolveFn = async (ref) => {
@@ -31,6 +23,39 @@ function trackingResolveFn(results: Map<string, string>): { fn: ResolveFn; calls
     return results.get(refKey(ref));
   };
   return { fn, calls };
+}
+
+interface Deferred {
+  readonly promise: Promise<string | undefined>;
+  resolve: (value: string | undefined) => void;
+  reject: (err: Error) => void;
+}
+
+function deferred(): Deferred {
+  let resolve!: (value: string | undefined) => void;
+  let reject!: (err: Error) => void;
+  const promise = new Promise<string | undefined>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+function blockingResolveFn(
+  deferreds: Map<string, Deferred>,
+  onCall?: () => void
+): { fn: ResolveFn; callCount: number } {
+  const state = { fn: undefined as unknown as ResolveFn, callCount: 0 };
+  state.fn = (ref: SourceReference) => {
+    state.callCount++;
+    onCall?.();
+    const d = deferreds.get(refKey(ref));
+    if (d) {
+      return d.promise;
+    }
+    return Promise.resolve(`/resolved/${ref.blockName}`);
+  };
+  return state;
 }
 
 describe('BackgroundResolver', () => {
@@ -170,54 +195,78 @@ describe('BackgroundResolver', () => {
       const resolver = new BackgroundResolver([ref1, ref2], '/tmp/test', undefined, fn);
       await resolver.start();
 
-      // Reset call tracking
-      calls.length = 0;
+      const prevCallCount = calls.length;
 
       // resolveNow on already-resolved ref should NOT call resolveFn again
       const result = await resolver.resolveNow(ref1);
       assert.strictEqual(result, '/resolved/dep1');
-      assert.strictEqual(calls.length, 0);
+      assert.strictEqual(calls.length, prevCallCount);
     });
 
     it('should wait for currently-resolving ref', async () => {
       const ref1 = makeRenderRef(0, 20, 'dep1');
+      const d = deferred();
 
-      let resolveRef1: ((value: string | undefined) => void) | undefined;
-      let callCount = 0;
       let fnCalledResolve: () => void;
       const fnCalledPromise = new Promise<void>((r) => { fnCalledResolve = r; });
 
-      const fn: ResolveFn = (ref) => {
-        callCount++;
-        // Signal that fn was called
-        fnCalledResolve();
-        // Block resolution until we manually resolve it
-        return new Promise<string | undefined>((resolve) => {
-          resolveRef1 = resolve;
-        });
+      const { fn, callCount: _ } = blockingResolveFn(
+        new Map([[refKey(ref1), d]]),
+        () => fnCalledResolve()
+      );
+      const state = { callCount: 0 };
+      const wrappedFn: ResolveFn = (...args) => {
+        state.callCount++;
+        return fn(...args);
       };
 
-      // Only one ref — so callCount can only be 1 or 2
-      const resolver = new BackgroundResolver([ref1], '/tmp/test', undefined, fn);
+      const resolver = new BackgroundResolver([ref1], '/tmp/test', undefined, wrappedFn);
 
       // Start background — it will block on ref1
       const startPromise = resolver.start();
 
-      // Wait until fn is actually called for ref1 (deterministic, not time-based)
+      // Wait until fn is actually called (deterministic, not time-based)
       await fnCalledPromise;
 
       // ref1 is currently being resolved — resolveNow should wait, not call fn again
       const resolveNowPromise = resolver.resolveNow(ref1);
 
       // Complete ref1 resolution
-      assert.ok(resolveRef1, 'resolveRef1 callback should be set');
-      resolveRef1!('/resolved/dep1');
+      d.resolve('/resolved/dep1');
 
       const result = await resolveNowPromise;
       assert.strictEqual(result, '/resolved/dep1');
 
       // resolveFn should have been called only once (by start), not again by resolveNow
-      assert.strictEqual(callCount, 1);
+      assert.strictEqual(state.callCount, 1);
+
+      await startPromise;
+    });
+
+    it('should return undefined when currently-resolving ref rejects', async () => {
+      const ref1 = makeRenderRef(0, 20, 'dep1');
+      const d = deferred();
+
+      let fnCalledResolve: () => void;
+      const fnCalledPromise = new Promise<void>((r) => { fnCalledResolve = r; });
+
+      const fn: ResolveFn = () => {
+        fnCalledResolve();
+        return d.promise;
+      };
+
+      const resolver = new BackgroundResolver([ref1], '/tmp/test', undefined, fn);
+      const startPromise = resolver.start();
+
+      await fnCalledPromise;
+
+      const resolveNowPromise = resolver.resolveNow(ref1);
+
+      // Reject the in-flight resolution
+      d.reject(new Error('render failed'));
+
+      const result = await resolveNowPromise;
+      assert.strictEqual(result, undefined);
 
       await startPromise;
     });
@@ -227,14 +276,14 @@ describe('BackgroundResolver', () => {
       const ref2 = makeRenderRef(30, 50, 'dep2');
       const ref3 = makeRenderRef(60, 80, 'dep3');
 
-      let resolveRef1: ((value: string | undefined) => void) | undefined;
+      const d1 = deferred();
+      let fnCalledResolve: () => void;
+      const fnCalledPromise = new Promise<void>((r) => { fnCalledResolve = r; });
 
-      // Use a non-async function to avoid double promise wrapping
       const fn: ResolveFn = (ref) => {
         if (refKey(ref) === refKey(ref1)) {
-          return new Promise<string | undefined>((resolve) => {
-            resolveRef1 = resolve;
-          });
+          fnCalledResolve();
+          return d1.promise;
         }
         return Promise.resolve(`/resolved/${ref.blockName}`);
       };
@@ -244,8 +293,8 @@ describe('BackgroundResolver', () => {
       // Start background — it will block on ref1
       const startPromise = resolver.start();
 
-      // Wait a tick for start() to begin resolving ref1
-      await new Promise((r) => setTimeout(r, 10));
+      // Wait until fn is called for ref1 (deterministic)
+      await fnCalledPromise;
 
       // ref3 is not yet processed — resolveNow should cancel background and resolve directly
       const result = await resolver.resolveNow(ref3);
@@ -257,8 +306,20 @@ describe('BackgroundResolver', () => {
       assert.strictEqual(resolver.hasResult(refKey(ref2)), false);
 
       // Unblock ref1 so start() can finish
-      resolveRef1!('/resolved/dep1');
+      d1.resolve('/resolved/dep1');
       await startPromise;
+    });
+
+    it('should handle resolveNow for a ref not in the queue', async () => {
+      const queuedRef = makeRenderRef(0, 20, 'dep1');
+      const unknownRef = makeRenderRef(100, 120, 'unknown');
+      const fn: ResolveFn = async (ref) => `/resolved/${ref.blockName}`;
+
+      const resolver = new BackgroundResolver([queuedRef], '/tmp/test', undefined, fn);
+
+      const result = await resolver.resolveNow(unknownRef);
+      assert.strictEqual(result, '/resolved/unknown');
+      assert.strictEqual(resolver.isCancelled, true);
     });
 
     it('should store undefined and return undefined on resolve failure', async () => {
