@@ -4,6 +4,8 @@
 
 [VS Code extension](https://marketplace.visualstudio.com/items?itemName=caseycs.vscode-terragrunt-navigator) that makes `source` and `config_path` paths in Terragrunt HCL files Ctrl+Click navigable.
 
+![VSCode screenshot](/images/screenshot.png)
+
 ## Features
 
 - Resolves `${get_repo_root()}` to the actual git repository root
