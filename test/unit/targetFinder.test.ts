@@ -11,7 +11,7 @@ describe('targetFinder', () => {
       const result = await findTargetFile(moduleDir);
 
       assert.ok(result);
-      assert.ok(result.endsWith('main.tf'));
+      assert.ok(result!.endsWith('main.tf'));
     });
 
     it('should return undefined for non-existent directory', async () => {
@@ -29,7 +29,7 @@ describe('targetFinder', () => {
       const result = await findTargetFile(moduleDir);
 
       assert.ok(result);
-      assert.ok(result.endsWith('main.tf'));
+      assert.ok(result!.endsWith('main.tf'));
     });
 
     it('should fall back to first .tf file when main.tf is not found', async () => {
@@ -37,7 +37,7 @@ describe('targetFinder', () => {
       const result = await findTargetFile(moduleDir);
 
       assert.ok(result, 'should find a .tf file even without main.tf');
-      assert.ok(result.endsWith('outputs.tf'), 'should return the alphabetically first .tf file (outputs.tf)');
+      assert.ok(result!.endsWith('outputs.tf'), 'should return the alphabetically first .tf file (outputs.tf)');
     });
 
     it('should still return undefined for directory with no .tf files', async () => {
