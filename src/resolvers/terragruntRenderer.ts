@@ -37,7 +37,7 @@ export function renderConfig(cwd: string, timeout?: number): Promise<ParsedRende
   const effectiveTimeout = timeout ?? DEFAULT_RENDER_TIMEOUT;
 
   return new Promise((resolve, reject) => {
-    const child = execFile('terragrunt', ['render', '--json'], { cwd, timeout: effectiveTimeout }, (error, stdout) => {
+    const child = execFile('terragrunt', ['render', '--json'], { cwd, timeout: effectiveTimeout }, (error: Error | null, stdout: string) => {
       activeProcesses.delete(cwd);
 
       if (error) {
